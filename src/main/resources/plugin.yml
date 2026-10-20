@@ -1,10 +1,18 @@
 name: OneWayElytra
-version: '1.2.0-beta1'
+version: '${project.version}'
 main: de.jugglegaming.oneWayElytra.OneWayElytra
 author: JuggleGaming
-api-version: '26.1.2'
+api-version: '26.2'
+folia-supported: true
+softdepend: [WorldGuard]
 
 commands:
   onewayelytra:
     description: "OneWayElytra"
     aliases: [owe]
+    permission: onewayelytra.command
+
+permissions:
+  onewayelytra.command:
+    description: Allows using the /onewayelytra command.
+    default: op

@@ -5,36 +5,43 @@ import de.jugglegaming.oneWayElytra.listeners.ElytraItemListener;
 import de.jugglegaming.oneWayElytra.listeners.OneWayElytraListener;
 import de.jugglegaming.oneWayElytra.managers.FileManager;
 import de.jugglegaming.oneWayElytra.managers.RadiusManager;
+import de.jugglegaming.oneWayElytra.utils.RegionHook;
 import de.jugglegaming.oneWayElytra.utils.Tools;
 import de.jugglegaming.oneWayElytra.utils.WorldguardFlags;
 import de.jugglegaming.oneWayElytra.utils.WorldguardHook;
 import de.jugglegaming.oneWayElytra.utils.WorldguardUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.event.EventHandler;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Objects;
+import java.util.logging.Level;
+
 public final class OneWayElytra extends JavaPlugin {
 
-    private static OneWayElytra Instance;
+    private static OneWayElytra instance;
 
-    public String prefix;
+    public String prefix = "§5OWE §f» ";
+
     private FileManager fileManager;
     private RadiusManager radiusManager;
-    public Tools tools;
-    PluginManager pluginManager = Bukkit.getPluginManager();
-
-    public ConsoleCommandSender ccs = Bukkit.getServer().getConsoleSender();
+    private Tools tools;
 
     private OneWayElytraListener oneWayElytraListener;
     private ElytraItemListener elytraItemListener;
 
-    private WorldguardFlags wgFlag;
-    private WorldguardHook worldguardHook;
+    /**
+     * Abstraction around the optional WorldGuard integration. The listener only
+     * ever references this interface, so WorldGuard classes are not loaded when
+     * WorldGuard is not installed.
+     */
+    private RegionHook regionHook;
+    private boolean worldguardInstalled;
 
-    private boolean isWorldguardInstalled;
+    private final PluginManager pluginManager = Bukkit.getPluginManager();
+    private final ConsoleCommandSender console = Bukkit.getConsoleSender();
 
     @Override
     public void onLoad() {
@@ -43,77 +50,114 @@ public final class OneWayElytra extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        Instance = this;
-        fileManager = new FileManager(this);
-        fileManager.loadConfig(Instance);
-        ccs.sendMessage("[OneWayElytra] Config loaded.");
-        radiusManager = new RadiusManager(fileManager.getConfig());
-        fileManager.loadMessages(Instance);
-        ccs.sendMessage("[OneWayElytra] Language loaded: §7" + fileManager.getConfig().getString("language"));
-        this.tools = new Tools(this);
-        prefix = this.getTools().replaceVariables(getFileManager().getMessages().getString("prefix") + " ");
-        ccs.sendMessage(prefix + "Enabling...");
-        registerListener();
-        ccs.sendMessage(prefix + "Listeners successfully registered!");
-        registerCommands();
-        ccs.sendMessage(prefix + "Commands successfully registered!");
-        isWorldguardInstalled = WorldguardUtils.isWorldGuardInstalled();
-        if(isWorldguardInstalled) {
-            ccs.sendMessage(prefix + "WorldGuard: connected");
-        } else {
-            ccs.sendMessage(prefix + "WorldGuard: not found");
-        }
-        ccs.sendMessage(prefix + "*~*~*~*~*~*~*~* <<OneWayElytra>> *~*~*~*~*~*~*~*");
-        ccs.sendMessage(prefix + "Plugin successfully loaded!");
-        ccs.sendMessage(prefix + "Version: " + getDescription().getVersion());
-        ccs.sendMessage(prefix + "Author: " + getDescription().getAuthors());
-        ccs.sendMessage(prefix + "*~*~*~*~*~*~*~* <<OneWayElytra>> *~*~*~*~*~*~*~*");
+        instance = this;
 
+        fileManager = new FileManager(this);
+        fileManager.loadConfig(this);
+        if (fileManager.getConfig() == null) {
+            return;
+        }
+        console.sendMessage("[OneWayElytra] Config loaded.");
+
+        radiusManager = new RadiusManager(fileManager.getConfig());
+
+        fileManager.loadMessages(this);
+        if (fileManager.getMessages() == null) {
+            return;
+        }
+        console.sendMessage("[OneWayElytra] Language loaded: §7" + fileManager.getConfig().getString("language"));
+
+        this.tools = new Tools(this);
+        prefix = this.tools.replaceVariables(Objects.requireNonNullElse(
+                fileManager.getMessages().getString("prefix"), "&5OWE &f»") + " ");
+
+        console.sendMessage(prefix + "Enabling...");
+        registerListeners();
+        console.sendMessage(prefix + "Listeners successfully registered!");
+        registerCommands();
+        console.sendMessage(prefix + "Commands successfully registered!");
+
+        if (worldguardInstalled) {
+            console.sendMessage(prefix + "WorldGuard: connected");
+        } else {
+            console.sendMessage(prefix + "WorldGuard: not found");
+        }
+
+        console.sendMessage(prefix + "*~*~*~*~*~*~*~* <<OneWayElytra>> *~*~*~*~*~*~*~*");
+        console.sendMessage(prefix + "Plugin successfully loaded!");
+        console.sendMessage(prefix + "Version: " + getPluginMeta().getVersion());
+        console.sendMessage(prefix + "Author: " + getPluginMeta().getAuthors());
+        console.sendMessage(prefix + "*~*~*~*~*~*~*~* <<OneWayElytra>> *~*~*~*~*~*~*~*");
     }
 
     @Override
     public void onDisable() {
-        ccs.sendMessage(prefix + "*~*~*~*~*~*~*~* <<OneWayElytra>> *~*~*~*~*~*~*~*");
-        ccs.sendMessage(prefix + "Plugin successfully disabled!");
-        ccs.sendMessage(prefix + "*~*~*~*~*~*~*~* <<OneWayElytra>> *~*~*~*~*~*~*~*");
+        if (oneWayElytraListener != null) {
+            oneWayElytraListener.shutdown();
+        }
+        console.sendMessage(prefix + "*~*~*~*~*~*~*~* <<OneWayElytra>> *~*~*~*~*~*~*~*");
+        console.sendMessage(prefix + "Plugin successfully disabled!");
+        console.sendMessage(prefix + "*~*~*~*~*~*~*~* <<OneWayElytra>> *~*~*~*~*~*~*~*");
     }
 
-    public static OneWayElytra getInstance() {return Instance;}
+    public static OneWayElytra getInstance() {
+        return instance;
+    }
 
-    public Tools getTools(){
-        return  tools;
+    public Tools getTools() {
+        return tools;
     }
 
     public FileManager getFileManager() {
         return fileManager;
     }
 
-    @EventHandler
-    public void registerListener() {
-        oneWayElytraListener = new OneWayElytraListener(this, worldguardHook);
+    public RadiusManager getRadiusManager() {
+        return radiusManager;
+    }
+
+    public RegionHook getRegionHook() {
+        return regionHook;
+    }
+
+    public boolean isWorldguardInstalled() {
+        return worldguardInstalled;
+    }
+
+    private void registerListeners() {
+        oneWayElytraListener = new OneWayElytraListener(this, regionHook);
         pluginManager.registerEvents(oneWayElytraListener, this);
         elytraItemListener = new ElytraItemListener(this);
         pluginManager.registerEvents(elytraItemListener, this);
+
+        // Start the per-player flight checks for players that are already online
+        // (relevant for /reload-like plugin loads on non-Folia servers).
+        oneWayElytraListener.startTrackingAll();
     }
 
-    @EventHandler
-    public void registerCommands() {
-        //Objects.requireNonNull(getCommand("onewayelytra")).setExecutor(new OneWayElytraCMD(Instance));
-        getCommand("onewayelytra").setExecutor(new OneWayElytraCommand(Instance, oneWayElytraListener));
+    private void registerCommands() {
+        PluginCommand command = Objects.requireNonNull(getCommand("onewayelytra"), "onewayelytra command is missing from plugin.yml");
+        command.setExecutor(new OneWayElytraCommand(this, oneWayElytraListener));
     }
 
-    public void connectToWorldguard(){
-        Plugin worldGuard = pluginManager.getPlugin("WorldGuard");
-        if(WorldguardUtils.isWorldGuardInstalled()){
-            WorldguardFlags.load();
-            worldguardHook = new WorldguardHook();
-            ccs.sendMessage("[OneWayElytra] Successfully connected to WorldGuard!");
-        } else {
-            ccs.sendMessage("[OneWayElytra] Worldguard not found.");
+    private void connectToWorldguard() {
+        worldguardInstalled = WorldguardUtils.isWorldGuardInstalled();
+        if (!worldguardInstalled) {
+            console.sendMessage("[OneWayElytra] Worldguard not found.");
+            return;
         }
-    }
 
-    public RadiusManager getRadiusManager() {
-        return radiusManager;
+        try {
+            // WorldGuard flags must be registered during onLoad.
+            WorldguardFlags.load();
+            regionHook = new WorldguardHook();
+            console.sendMessage("[OneWayElytra] Successfully connected to WorldGuard!");
+        } catch (Throwable throwable) {
+            // A missing or incompatible WorldGuard build must never take the
+            // whole plugin down; the plugin simply runs without region flags.
+            regionHook = null;
+            worldguardInstalled = false;
+            getLogger().log(Level.WARNING, "WorldGuard was found but could not be hooked. Continuing without WorldGuard support.", throwable);
+        }
     }
 }

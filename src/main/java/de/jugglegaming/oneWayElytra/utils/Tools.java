@@ -6,126 +6,73 @@ import org.bukkit.entity.Player;
 
 public class Tools {
 
-  private OneWayElytra oneWayElytra;
+  private final OneWayElytra oneWayElytra;
 
-  public Tools(OneWayElytra oneWayElytra){
-    oneWayElytra = oneWayElytra;
+  public Tools(OneWayElytra oneWayElytra) {
+    this.oneWayElytra = oneWayElytra;
   }
 
   public String replaceVariables(String text) {
-    return ChatColor.translateAlternateColorCodes('&', text)
-              .replaceAll("%>>%", "»")
-              .replaceAll("%<<%", "«")
-              .replaceAll("%ue%", "ü")
-              .replaceAll("%ae%", "ä")
-              .replaceAll("%oe%", "ö")
-              .replaceAll("%ss%", "ß")
-              .replaceAll("%coin%", "⛂")
-              .replaceAll("%coins%", "⛃");
+    return translate(text);
   }
 
-public String replaceVariables(String text, String location) {
-    return ChatColor.translateAlternateColorCodes('&', text)
-            .replaceAll("%>>%", "»")
-            .replaceAll("%<<%", "«")
-            .replaceAll("%ue%", "ü")
-            .replaceAll("%ae%", "ä")
-            .replaceAll("%oe%", "ö")
-            .replaceAll("%ss%", "ß")
-            .replaceAll("%coin%", "⛂")
-            .replaceAll("%coins%", "⛃")
-            .replaceAll("%location%", location + "");
-}
+  public String replaceVariables(String text, String location) {
+    return translate(text)
+            .replace("%location%", String.valueOf(location));
+  }
 
   public String replaceVariables(String text, Integer integer) {
-    return ChatColor.translateAlternateColorCodes('&', text)
-            .replaceAll("%>>%", "»")
-            .replaceAll("%<<%", "«")
-            .replaceAll("%ue%", "ü")
-            .replaceAll("%ae%", "ä")
-            .replaceAll("%oe%", "ö")
-            .replaceAll("%ss%", "ß")
-            .replaceAll("%coin%", "⛂")
-            .replaceAll("%coins%", "⛃")
-            .replaceAll("%radius%", integer + "")
-            .replaceAll("%multiplier%", integer + "")
-            .replaceAll("%boostMultiplier%", integer + "")
-            .replaceAll("%boostmultiplier%", integer + "");
+    return translate(text)
+            .replace("%radius%", integer + "")
+            .replace("%multiplier%", integer + "")
+            .replace("%boostMultiplier%", integer + "")
+            .replace("%boostmultiplier%", integer + "");
   }
+
   public String replaceVariables(String text, Integer integer, String location) {
-        return ChatColor.translateAlternateColorCodes('&', text)
-                .replaceAll("%>>%", "»")
-                .replaceAll("%<<%", "«")
-                .replaceAll("%ue%", "ü")
-                .replaceAll("%ae%", "ä")
-                .replaceAll("%oe%", "ö")
-                .replaceAll("%ss%", "ß")
-                .replaceAll("%coin%", "⛂")
-                .replaceAll("%coins%", "⛃")
-                .replaceAll("%radius%", integer + "")
-                .replaceAll("%multiplier%", integer + "")
-                .replaceAll("%boostMultiplier%", integer + "")
-                .replaceAll("%boostmultiplier%", integer + "")
-                .replaceAll("%location%", location + "");
+    return translate(text)
+            .replace("%radius%", integer + "")
+            .replace("%multiplier%", integer + "")
+            .replace("%boostMultiplier%", integer + "")
+            .replace("%boostmultiplier%", integer + "")
+            .replace("%location%", String.valueOf(location));
   }
 
   public String replaceVariables(Player player, String text) {
-    return ChatColor.translateAlternateColorCodes('&', text)
-              .replaceAll("%>>%", "»")
-              .replaceAll("%<<%", "«")
-              .replaceAll("%ue%", "ü")
-              .replaceAll("%ae%", "ä")
-              .replaceAll("%oe%", "ö")
-              .replaceAll("%ss%", "ß")
-              .replaceAll("%coin%", "⛂")
-              .replaceAll("%coins%", "⛃")
-              .replaceAll("%player%", player.getName());
+    return translate(text)
+            .replace("%player%", player.getName());
   }
 
   public String replaceVariables(String text, Double inputDouble) {
-    return ChatColor.translateAlternateColorCodes('&', text)
-                    .replaceAll("%>>%", "»")
-                    .replaceAll("%<<%", "«")
-                    .replaceAll("%ue%", "ü")
-                    .replaceAll("%ae%", "ä")
-                    .replaceAll("%oe%", "ö")
-                    .replaceAll("%ss%", "ß")
-                    .replaceAll("%coin%", "⛂")
-                    .replaceAll("%coins%", "⛃")
-                    .replaceAll("%money%", inputDouble.toString())
-                    .replaceAll("%multiplier%", inputDouble + "")
-                    .replaceAll("%boostMultiplier%", inputDouble + "")
-                    .replaceAll("%boostmultiplier%", inputDouble + "");
+    return translate(text)
+            .replace("%money%", inputDouble.toString())
+            .replace("%multiplier%", inputDouble + "")
+            .replace("%boostMultiplier%", inputDouble + "")
+            .replace("%boostmultiplier%", inputDouble + "");
   }
 
   public String replaceVariables(Player player, String text, Double money) {
-    return ChatColor.translateAlternateColorCodes('&', text)
-                    .replaceAll("%>>%", "»")
-                    .replaceAll("%<<%", "«")
-                    .replaceAll("%ue%", "ü")
-                    .replaceAll("%ae%", "ä")
-                    .replaceAll("%oe%", "ö")
-                    .replaceAll("%ss%", "ß")
-                    .replaceAll("%coin%", "⛂")
-                    .replaceAll("%coins%", "⛃")
-                    .replaceAll("%money%", money.toString())
-                    .replaceAll("%player%", player.getName());
+    return translate(text)
+            .replace("%money%", money.toString())
+            .replace("%player%", player.getName());
   }
 
   public String replaceVariables(String text, int time) {
-    return ChatColor.translateAlternateColorCodes('&', text)
-            .replaceAll("%>>%", "»")
-            .replaceAll("%<<%", "«")
-            .replaceAll("%ue%", "ü")
-            .replaceAll("%ae%", "ä")
-            .replaceAll("%oe%", "ö")
-            .replaceAll("%ss%", "ß")
-            .replaceAll("%coin%", "⛂")
-            .replaceAll("%coins%", "⛃")
-            .replaceAll("%time%", time + "");
+    return translate(text)
+            .replace("%time%", time + "");
   }
 
-
+  private String translate(String text) {
+    return ChatColor.translateAlternateColorCodes('&', text == null ? "" : text)
+            .replace("%>>%", "»")
+            .replace("%<<%", "«")
+            .replace("%ue%", "ü")
+            .replace("%ae%", "ä")
+            .replace("%oe%", "ö")
+            .replace("%ss%", "ß")
+            .replace("%coin%", "⛂")
+            .replace("%coins%", "⛃");
+  }
 
   public boolean isInt(String s) {
     try {

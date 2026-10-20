@@ -1,6 +1,7 @@
 package de.jugglegaming.oneWayElytra.utils;
 
 import org.bukkit.Location;
+import org.bukkit.World;
 
 public class RadiusArea {
 
@@ -18,14 +19,23 @@ public class RadiusArea {
         this.radiusSquared = radius * radius;
     }
 
-    public boolean isInside(Location loc) {
-        if (!loc.getWorld().getName().equals(world)) {
+    public String getName() {
+        return name;
+    }
+
+    public boolean isInside(Location location) {
+        if (location == null) {
             return false;
         }
 
-        double dx = loc.getX() - x;
-        double dy = loc.getY() - y;
-        double dz = loc.getZ() - z;
+        World locationWorld = location.getWorld();
+        if (locationWorld == null || !locationWorld.getName().equals(world)) {
+            return false;
+        }
+
+        double dx = location.getX() - x;
+        double dy = location.getY() - y;
+        double dz = location.getZ() - z;
 
         return (dx * dx + dy * dy + dz * dz) <= radiusSquared;
     }
