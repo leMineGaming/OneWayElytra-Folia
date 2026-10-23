@@ -10,30 +10,40 @@ import com.sk89q.worldguard.protection.regions.RegionQuery;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * WorldGuard implementation of {@link RegionHook}.
  *
- * <p>Only read-only queries are performed. Those are safe to call from Folia's
- * region threads (one thread per region, no shared mutable state).</p>
+ * <p>Only read-only queries are performed. WorldGuard's region query cache and
+ * region indexes are thread-safe, so those queries are safe to call from
+ * Folia's region threads (one thread per region, no shared mutable state).</p>
  */
 public class WorldguardHook implements RegionHook {
 
+    private static final Logger LOGGER = Logger.getLogger("OneWayElytra");
+
+    private volatile boolean queryFailureLogged;
+
     @Override
     public boolean canStart(Player player) {
-        return testFlag(player, player.getLocation(), WorldguardFlags.OWE_START, false);
+        return testFlag(player, player.getLocation(), WorldguardFlags.getStart(), false);
     }
 
     @Override
     public boolean isEntryAllowed(Player player, Location location) {
-        return testFlag(player, location, WorldguardFlags.OWE_ENTRY, true);
+        return testFlag(player, location, WorldguardFlags.getEntry(), true);
     }
 
     @Override
     public boolean isItemAllowed(Player player) {
-        return testFlag(player, player.getLocation(), WorldguardFlags.OWE_ITEM, true);
+        return testFlag(player, player.getLocation(), WorldguardFlags.getItem(), true);
     }
 
-    private boolean testFlag(Player player, Location location, com.sk89q.worldguard.protection.flags.StateFlag flag, boolean defaultValue) {
+    private boolean testFlag(Player player, Location location,
+                             com.sk89q.worldguard.protection.flags.StateFlag flag,
+                             boolean defaultValue) {
         if (flag == null || location == null || location.getWorld() == null) {
             return defaultValue;
         }
@@ -51,7 +61,15 @@ public class WorldguardHook implements RegionHook {
             LocalPlayer localPlayer = worldGuardPlugin.wrapPlayer(player);
             return set.testState(localPlayer, flag);
         } catch (RuntimeException exception) {
-            // A failed query should never break flight handling.
+            // A failed query should never break flight handling, but it must not
+            // silently disable all region flags either. Log it once so the
+            // configuration problem is visible instead of looking like a broken
+            // hook.
+            if (!queryFailureLogged) {
+                queryFailureLogged = true;
+                LOGGER.log(Level.WARNING, "WorldGuard region query failed; falling back to flag defaults. "
+                        + "OneWayElytra's WorldGuard flags will not be applied until this is fixed.", exception);
+            }
             return defaultValue;
         }
     }

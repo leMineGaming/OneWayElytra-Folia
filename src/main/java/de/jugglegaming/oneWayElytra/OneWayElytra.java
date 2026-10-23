@@ -71,6 +71,13 @@ public final class OneWayElytra extends JavaPlugin {
         prefix = this.tools.replaceVariables(Objects.requireNonNullElse(
                 fileManager.getMessages().getString("prefix"), "&5OWE &f»") + " ");
 
+        // Some plugin loaders only make soft dependencies available after the
+        // load phase. Retry the hook here so the region flags are not silently
+        // disabled if WorldGuard appeared too late for onLoad().
+        if (regionHook == null && WorldguardUtils.isWorldGuardInstalled()) {
+            connectToWorldguard();
+        }
+
         console.sendMessage(prefix + "Enabling...");
         registerListeners();
         console.sendMessage(prefix + "Listeners successfully registered!");
@@ -79,6 +86,8 @@ public final class OneWayElytra extends JavaPlugin {
 
         if (worldguardInstalled) {
             console.sendMessage(prefix + "WorldGuard: connected");
+        } else if (WorldguardUtils.isWorldGuardInstalled()) {
+            console.sendMessage(prefix + "WorldGuard: found but not usable (see warning above)");
         } else {
             console.sendMessage(prefix + "WorldGuard: not found");
         }

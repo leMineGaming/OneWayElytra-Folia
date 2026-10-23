@@ -1,3 +1,11 @@
+## 1.3.1 – Bug fixes
+
+- Fixed the air-click boost: the boost and the chestplate interaction protection now share one `PlayerInteractEvent` handler, so their execution order can no longer swallow the boost.
+- WorldGuard flag registration is now safe when the flag registry is already locked (plugin hot-reload) and the hook is retried during `onEnable` if WorldGuard only became visible late.
+- Failed WorldGuard region queries are logged once instead of silently falling back to the flag defaults.
+- The WorldGuard status message now distinguishes a missing WorldGuard from one that is installed but could not be hooked.
+- Region entry checks (`owe-entry`) are no longer skipped when a move event was already cancelled.
+
 ## 1.3.0 – Folia 26.2 port
 
 ### Breaking changes

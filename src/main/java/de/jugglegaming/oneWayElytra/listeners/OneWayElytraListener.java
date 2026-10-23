@@ -274,7 +274,7 @@ public class OneWayElytraListener implements Listener {
         track(player);
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
         Location from = event.getFrom();
@@ -368,23 +368,6 @@ public class OneWayElytraListener implements Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onBoost(PlayerInteractEvent event) {
-        Player player = event.getPlayer();
-        UUID playerId = player.getUniqueId();
-
-        if (playersBoosted.contains(playerId) || !playersFlying.contains(playerId)) {
-            return;
-        }
-
-        Action action = event.getAction();
-        if (action == Action.LEFT_CLICK_AIR || action == Action.RIGHT_CLICK_AIR) {
-            event.setCancelled(true);
-            playersBoosted.add(playerId);
-            player.setVelocity(player.getLocation().getDirection().multiply(boostMultiplier));
-        }
-    }
-
-    @EventHandler(ignoreCancelled = true)
     public void onEntityGlide(EntityToggleGlideEvent event) {
         if (event.getEntityType() == EntityType.PLAYER
                 && playersFlying.contains(event.getEntity().getUniqueId())) {
@@ -410,10 +393,39 @@ public class OneWayElytraListener implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    /**
+     * Handles both the one-time boost and the protection of a tagged chestplate
+     * while flying.
+     *
+     * <p>Both used to live in separate {@link PlayerInteractEvent} handlers.
+     * Since Bukkit does not guarantee the order in which two handlers for the
+     * same event and priority are called, the chestplate protection could
+     * cancel the event before the boost handler ran (the boost handler then
+     * ignored the already cancelled event), which made right-click boosting
+     * unreliable or completely ineffective. Keeping the logic in one handler
+     * removes that ordering problem.</p>
+     */
+    @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
-        if (playersFlying.contains(player.getUniqueId()) && hasTaggedElytra(player)) {
+        UUID playerId = player.getUniqueId();
+
+        if (!playersFlying.contains(playerId)) {
+            return;
+        }
+
+        Action action = event.getAction();
+        boolean airClick = action == Action.LEFT_CLICK_AIR || action == Action.RIGHT_CLICK_AIR;
+
+        if (airClick && !playersBoosted.contains(playerId)) {
+            event.setCancelled(true);
+            playersBoosted.add(playerId);
+            player.setVelocity(player.getLocation().getDirection().multiply(boostMultiplier));
+            return;
+        }
+
+        // Prevent using or swapping out a tagged chestplate while flying.
+        if (hasTaggedElytra(player)) {
             event.setCancelled(true);
         }
     }
